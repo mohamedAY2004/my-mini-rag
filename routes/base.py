@@ -1,9 +1,10 @@
 from fastapi import FastAPI, APIRouter
+import os
 base_router = APIRouter(
     prefix="/api/v1",
 # tags is for the documentation
     tags=["base"]
 )
 @base_router.get("/")
-def welcome():
-    return {"message": "Welcome to the API, i just changed the message"}
+async def welcome():
+    return {"message": f"Welcome to  {os.getenv('APP_NAME')} version {os.getenv('APP_VERSION')} by {os.getenv('APP_AUTHOR')}"}

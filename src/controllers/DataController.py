@@ -15,19 +15,19 @@ class DataController(BaseController):
             return False,ResponseSignal.FILE_SIZE_IS_EXCEEDED.value
         return True,ResponseSignal.FILE_VALIDATION_SUCCESS.value
 
-    def generate_unique_file_name(self, orig_file_name: str, project_id: str):
+    def generate_unique_file_path(self, orig_file_name: str, project_id: str):
        project_dir = ProjectController().get_project_dir(project_id=project_id)
        random_key = self.generate_random_string(18)
        clean_file_name = self.get_clean_file_name(orig_file_name=orig_file_name)
-       new_file_path = os.path.join(project_dir, f"{clean_file_name}_{random_key}")
+       new_file_path = os.path.join(project_dir, f"{random_key}_{clean_file_name}")
        while os.path.exists(new_file_path):
            random_key = self.generate_random_string(18)
-           new_file_path = os.path.join(project_dir, f"{clean_file_name}_{random_key}")
-       return new_file_path
+           new_file_path = os.path.join(project_dir, f"{random_key}_{clean_file_name}")
+       return new_file_path,f"{random_key}_{clean_file_name}"
 
     def get_clean_file_name(self, orig_file_name: str):
-        # remove any special characters except a-z, A-Z, 0-9, - and _
-        clean_file_name = re.sub(r'[^a-zA-Z0-9_-]', '', orig_file_name)
-        #replace spaces with _
-        clean_file_name = clean_file_name.replace(' ', '_')
-        return clean_file_name
+         # remove any special characters, except underscore and .
+        cleaned_file_name = re.sub(r'[^\w.]', '', orig_file_name.strip())
+        # replace spaces with underscore
+        cleaned_file_name = cleaned_file_name.replace(" ", "_")
+        return cleaned_file_name

@@ -21,7 +21,7 @@ async def upload_data(project_id: str, file: UploadFile,app_settings: Settings =
             status_code=status.HTTP_400_BAD_REQUEST,
              content={"message": result_signal}
              )
-    file_path = DataController().generate_unique_file_name(orig_file_name=file.filename, project_id=project_id)
+    file_path,file_name = DataController().generate_unique_file_path(orig_file_name=file.filename, project_id=project_id)
     try:
         #async file upload with maxchunk size 512KB
         async with aiofiles.open(file_path, "wb") as f:
@@ -35,5 +35,7 @@ async def upload_data(project_id: str, file: UploadFile,app_settings: Settings =
             )
     return JSONResponse(
             status_code=status.HTTP_200_OK,
-             content={"message": ResponseSignal.FILE_UPLOAD_SUCCESS.value}
+             content={"message": ResponseSignal.FILE_UPLOAD_SUCCESS.value,
+             "file_name": file_name,
+             "file_path": file_path}
              )

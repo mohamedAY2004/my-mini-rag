@@ -20,6 +20,13 @@ $ pip install -r requirements.txt
 $ cp .env.example .env
 ```
 
+## Run docker Compose Services
+
+```bash
+$ cd docker
+$ sudo docker compose up -d
+```
+- update `.env` with your credintials 
 #### Run the fast api server
 ```bash
     uvicorn main:app --reload --host 0.0.0.0 --port 5000

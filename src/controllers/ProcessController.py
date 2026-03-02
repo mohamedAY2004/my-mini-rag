@@ -2,6 +2,7 @@ from .BaseController import BaseController
 from .ProjectController import ProjectController
 from models import ProcessingEnum
 import os
+import re
 from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -28,8 +29,20 @@ class ProcessController(BaseController):
     def get_file_content(self, file_id: str):
         loader = self.get_file_loader(file_id=file_id)
         return loader.load()
-    
-    def process_file_content(self, file_content: list,file_id: str,chunk_size: int = 100,overlap_size: int = 20):
+    def clean_text(self,text: str) -> str:
+        """Clean common extraction artifacts before chunking for text and pdf files."""
+        # remove page numbers (standalone numbers on a line)
+        text = re.sub(r'^\s*\d+\s*$', '', text, flags=re.MULTILINE)
+        # normalize multiple newlines to double (paragraph boundary)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        # join hyphenated line breaks (common in PDFs: "algo-\nrithm" → "algorithm")
+        text = re.sub(r'-\n(\w)', r'\1', text)
+        # replace single newlines with space (mid-paragraph line wrapping)
+        text = re.sub(r'(?<!\n)\n(?!\n)', ' ', text)
+        # collapse multiple spaces
+        text = re.sub(r' {2,}', ' ', text)
+        return text.strip()
+    def process_file_content(self, file_content: list,file_id: str,chunk_size: int = 100,overlap_size: int = 20)->list:
         
         text_splitter = RecursiveCharacterTextSplitter(
          chunk_size=chunk_size,
@@ -37,7 +50,7 @@ class ProcessController(BaseController):
          length_function=len)
         
         file_content_texts=[
-            record.page_content
+            self.clean_text(record.page_content)
             for record in file_content
          ]
         file_content_metadata=[

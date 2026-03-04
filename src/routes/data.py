@@ -71,30 +71,39 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
     if do_reset == 1:
         await chunk_model.delete_chunks_by_project_id(project_id=project.id)
-
+    project_file_ids=[]
+    if file_id is not None:
+        project_file_ids.append(file_id)
+    else:
+        asset_model=await AssetModel.create_instance(db_client=request.app.db_client)
+        assets = await asset_model.get_all_project_assets(project_id=project.id,asset_type=AssetTypeEnum.FILE.value)
+        project_file_ids=[asset.asset_name for asset in assets]
+    inserted_count=0
     process_controller = ProcessController(project_id=project_id)
-    file_content = process_controller.get_file_content(file_id=file_id)
-    file_chunks = process_controller.process_file_content(
-        file_content=file_content,
-        file_id=file_id, 
-        chunk_size=chunk_size, 
-        overlap_size=overlap_size)
-    if file_chunks is None or len(file_chunks) == 0:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"message": ResponseSignal.FILE_PROCESSING_FAILED.value}
-            )
+    for file_id in project_file_ids:
+        file_content = process_controller.get_file_content(file_id=file_id)
+        file_chunks = process_controller.process_file_content(
+            file_content=file_content,
+            file_id=file_id, 
+            chunk_size=chunk_size, 
+            overlap_size=overlap_size)
 
-    file_chunks_records=[
-        DataChunk(
-            chunk_text=chunk.page_content,
-            chunk_metadata=chunk.metadata,  #type: ignore
-            chunk_order=idx+1,    
-            chunk_project_id=project.id
-        )
-        for idx,chunk in enumerate(file_chunks)
-    ]
-    inserted_count = await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+        if file_chunks is None or len(file_chunks) == 0:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": ResponseSignal.FILE_PROCESSING_FAILED.value}
+                )   
+
+        file_chunks_records=[
+            DataChunk(
+                chunk_text=chunk.page_content,
+                chunk_metadata=chunk.metadata,  #type: ignore
+                chunk_order=idx+1,    
+                chunk_project_id=project.id
+            )
+            for idx,chunk in enumerate(file_chunks)
+        ]
+        inserted_count = inserted_count +await chunk_model.insert_many_chunks(chunks=file_chunks_records)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": ResponseSignal.FILE_PROCESSING_SUCCESS.value,

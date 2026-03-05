@@ -73,13 +73,24 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
         await chunk_model.delete_chunks_by_project_id(project_id=project.id)
     project_file_ids=[]
     if file_id is not None:
+        if not os.path.exists(os.path.join(process_controller.project_dir, file_id)):
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": ResponseSignal.FILE_NOT_FOUND.value}
+                )
         project_file_ids.append(file_id)
+
     else:
         asset_model=await AssetModel.create_instance(db_client=request.app.db_client)
         assets = await asset_model.get_all_project_assets(project_id=project.id,asset_type=AssetTypeEnum.FILE.value)
         project_file_ids=[asset.asset_name for asset in assets]
     inserted_count=0
     process_controller = ProcessController(project_id=project_id)
+    if len(project_file_ids) == 0:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"message": ResponseSignal.NO_FILES_TO_PROCESS.value}
+            )
     for file_id in project_file_ids:
         file_content = process_controller.get_file_content(file_id=file_id)
         file_chunks = process_controller.process_file_content(
@@ -87,13 +98,6 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
             file_id=file_id, 
             chunk_size=chunk_size, 
             overlap_size=overlap_size)
-
-        if file_chunks is None or len(file_chunks) == 0:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": ResponseSignal.FILE_PROCESSING_FAILED.value}
-                )   
-
         file_chunks_records=[
             DataChunk(
                 chunk_text=chunk.page_content,

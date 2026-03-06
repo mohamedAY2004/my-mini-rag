@@ -72,6 +72,7 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
     if do_reset == 1:
         await chunk_model.delete_chunks_by_project_id(project_id=project.id)
     project_file_ids=[]
+    process_controller = ProcessController(project_id=project_id)
     if file_id is not None:
         if not os.path.exists(os.path.join(process_controller.project_dir, file_id)):
             return JSONResponse(
@@ -85,7 +86,6 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
         assets = await asset_model.get_all_project_assets(project_id=project.id,asset_type=AssetTypeEnum.FILE.value)
         project_file_ids=[asset.asset_name for asset in assets]
     inserted_count=0
-    process_controller = ProcessController(project_id=project_id)
     if len(project_file_ids) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,

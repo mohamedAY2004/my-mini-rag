@@ -20,6 +20,8 @@ class ProcessController(BaseController):
         file_path = os.path.join(
             self.project_dir,
             file_id)
+        if not os.path.exists(file_path):
+            return None
         if file_extension == ProcessingEnum.TEXT.value:
             return TextLoader(file_path=file_id,encoding="utf-8")
         elif file_extension == ProcessingEnum.PDF.value:
@@ -28,7 +30,9 @@ class ProcessController(BaseController):
 
     def get_file_content(self, file_id: str):
         loader = self.get_file_loader(file_id=file_id)
-        return loader.load()
+        if loader:
+            return loader.load()
+        return None
     def clean_text(self,text: str) -> str:
         """Clean common extraction artifacts before chunking for text and pdf files."""
         # remove page numbers (standalone numbers on a line)

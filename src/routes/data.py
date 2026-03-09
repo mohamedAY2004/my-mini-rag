@@ -69,30 +69,41 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
     project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id=project_id)
     chunk_model = await ChunkModel.create_instance(db_client=request.app.db_client)
+    asset_model=await AssetModel.create_instance(db_client=request.app.db_client)
     if do_reset == 1:
         await chunk_model.delete_chunks_by_project_id(project_id=project.id)
-    project_file_ids=[]
+    project_file_ids={}
     process_controller = ProcessController(project_id=project_id)
-    if file_id is not None:
+    if file_id:
         if not os.path.exists(os.path.join(process_controller.project_dir, file_id)):
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"message": ResponseSignal.FILE_NOT_FOUND.value}
                 )
-        project_file_ids.append(file_id)
-
+        asset_record = await asset_model.get_asset_record(asset_name=file_id,project_id=project.id)
+        if asset_record is None:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"message": ResponseSignal.FILE_NOT_FOUND.value}
+                )
+        project_file_ids={asset_record.id: asset_record.asset_name}
     else:
-        asset_model=await AssetModel.create_instance(db_client=request.app.db_client)
         assets = await asset_model.get_all_project_assets(project_id=project.id,asset_type=AssetTypeEnum.FILE.value)
-        project_file_ids=[asset.asset_name for asset in assets]
+        project_file_ids={
+            record.id: record.asset_name for record in assets
+            }
     inserted_count=0
+    files_cout=0
     if len(project_file_ids) == 0:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"message": ResponseSignal.NO_FILES_TO_PROCESS.value}
             )
-    for file_id in project_file_ids:
+    for asset_id,file_id in project_file_ids.items():
         file_content = process_controller.get_file_content(file_id=file_id)
+        if file_content is None:
+            logger.error(f"File content not found for file: {file_id}")
+            continue
         file_chunks = process_controller.process_file_content(
             file_content=file_content,
             file_id=file_id, 
@@ -103,14 +114,16 @@ async def process_endpoint(request: Request,project_id: str, process_request: Pr
                 chunk_text=chunk.page_content,
                 chunk_metadata=chunk.metadata,  #type: ignore
                 chunk_order=idx+1,    
-                chunk_project_id=project.id
+                chunk_project_id=project.id,
+                chunk_asset_id=asset_id
             )
             for idx,chunk in enumerate(file_chunks)
         ]
         inserted_count = inserted_count +await chunk_model.insert_many_chunks(chunks=file_chunks_records)
+        files_cout += 1
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"message": ResponseSignal.FILE_PROCESSING_SUCCESS.value,
-        "inserted_count": inserted_count}
+        "inserted_count": inserted_count,"files_count": files_cout}
         )
 

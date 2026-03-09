@@ -31,3 +31,12 @@ class AssetModel(BaseDataModel):
     async def get_all_project_assets(self,project_id: str,asset_type: str):
         result= await self.collection.find({"asset_project_id": ObjectId(project_id) if isinstance(project_id,str) else project_id,"asset_type": asset_type}).to_list(length=None)
         return [Asset(**record) for record in result]
+    
+    async def get_asset_record(self,asset_name: str,project_id: str):
+        result=await self.collection.find_one({
+            "asset_project_id": ObjectId(project_id) if isinstance(project_id,str) else project_id,
+            "asset_name": asset_name
+        })
+        if result :
+            return Asset(**result)
+        return None

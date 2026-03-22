@@ -9,6 +9,22 @@ class Settings (BaseSettings):
     FILE_DEFAULT_CHUNK_SIZE: int
     MONGODB_URL: str
     MONGODB_DATABASE: str
+    #====================LLM Settings====================
+    GENERATION_BACKEND: str
+    EMBEDDING_BACKEND: str
+
+    GENERATION_MODEL_ID: str=None
+    EMBEDDING_MODEL_ID: str=None
+    EMBEDDING_SIZE: int=None
+
+    DEFAULT_INPUT_MAX_CHARACTERS: int=None
+    DEFAULT_GENERATION_MAX_TOKENS: int=None
+    DEFAULT_GENERATION_TEMPERATURE: float=None
+
+    GEMINI_API_KEY: str=None
+    OPENAI_API_KEY: str=None
+    OPENAI_API_URL: str=None
+    COHERE_API_KEY: str=None
     
     class Config:
         env_file = ".env"

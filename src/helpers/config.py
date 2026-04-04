@@ -25,6 +25,11 @@ class Settings (BaseSettings):
     OPENAI_API_KEY: str=None
     OPENAI_API_URL: str=None
     COHERE_API_KEY: str=None
+
+    #====================VectorDB Settings====================
+    VECTOR_DB_BACKEND: str=None
+    VECTOR_DB_PATH: str=None
+    VECTOR_DB_DISTANCE_METHOD: str=None
     
     class Config:
         env_file = ".env"

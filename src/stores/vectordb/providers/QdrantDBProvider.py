@@ -3,6 +3,7 @@ from ..VectorDBInterface import VectorDBInterface
 from ..VectorDBEnums import DistanceMethodEnum
 from typing import List
 import logging
+import uuid
 class QdrantDBProvider(VectorDBInterface):
     def __init__(self, db_path: str, distance_method: str):
         self.client = None
@@ -48,7 +49,8 @@ class QdrantDBProvider(VectorDBInterface):
            await self.delete_collection(collection_name) 
         if not await self.is_collection_exists(collection_name):
             return await self.client.create_collection(collection_name,
-             vectors_config=models.VectorParams(size=embedding_size, distance=self.distance_method)
+             vectors_config=models.VectorParams(size=embedding_size, distance=self.distance_method),
+             optimizers_config=models.OptimizersConfigDiff(indexing_threshold=0)  # force immediate indexing
             )
         return False
 
@@ -59,7 +61,7 @@ class QdrantDBProvider(VectorDBInterface):
             self.logger.error(f"Collection {collection_name} does not exist to insert record")
             return False
         try:
-            _=await self.client.upsert(collection_name=collection_name,points=[models.PointStruct(id=record_id, vector=vector, payload={"metadata": metadata, "text": text})])
+            _=await self.client.upsert(collection_name=collection_name,points=[models.PointStruct(id=self._to_qdrant_id(record_id), vector=vector, payload={"metadata": metadata, "text": text})])
         except Exception as e:
             self.logger.error(f"Error inserting record into collection {collection_name}: {e}")
             return False
@@ -72,6 +74,9 @@ class QdrantDBProvider(VectorDBInterface):
         if record_ids is None:
             self.logger.error(f"Record IDs are required to insert records")
             return False
+        if not self.client:
+            self.logger.error(f"Client is not connected to the database")
+            return False
         if not await self.is_collection_exists(collection_name):
             self.logger.error(f"Collection {collection_name} does not exist to insert records")
             return False
@@ -81,7 +86,7 @@ class QdrantDBProvider(VectorDBInterface):
         for i in range(0, len(texts), batch_size):
             batch_end=min(i+batch_size, len(texts))
             batch_records = [
-                models.PointStruct(id=record_ids[x], vector=vectors[x], payload={"metadata": metadata[x], "text": texts[x]})
+                models.PointStruct(id=self._to_qdrant_id(record_ids[x]), vector=vectors[x], payload={"metadata": metadata[x], "text": texts[x]})
                  for x in  range(i,batch_end)
                 ]
             try:
@@ -96,5 +101,9 @@ class QdrantDBProvider(VectorDBInterface):
         if not await self.is_collection_exists(collection_name):
             self.logger.error(f"Collection {collection_name} does not exist to search records") 
             return None
-        results=await self.client.query_points(collection_name=collection_name, query=vector, limit=limit,with_payload=True)
+        results = await self.client.query_points(collection_name=collection_name, query=vector, limit=limit, with_payload=True)
         return results.points
+
+    def _to_qdrant_id(self, record_id) -> str:
+        hex_str = str(record_id).zfill(32)
+        return str(uuid.UUID(hex_str))

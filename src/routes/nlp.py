@@ -65,13 +65,9 @@ async def search_project(request: Request,project_id: str, search_request: Searc
     project_model = await ProjectModel.create_instance(db_client=request.app.db_client)
     project = await project_model.get_project_or_create_one(project_id=project_id)
     nlp_controller = NLPController(vectordb_client=request.app.vectordb_client, generation_client=request.app.generation_client, embedding_client=request.app.embedding_client)
-    vector=request.app.embedding_client.embed_text(text=search_request.query,document_type=DocumentTypeEnum.QUERY.value)[0]
-    search_results = await request.app.vectordb_client.search_by_vector(collection_name=nlp_controller.create_collection_name(project_id=project_id), vector=vector, limit=search_request.limit)
-    search_results = [
-         {"text":result.payload["text"],"score":result.score}
-        for result in search_results
-    ]
+    results =await nlp_controller.search_vectordb(project=project, query= search_request.query,limit=search_request.limit,threshold=search_request.threshold)
+    results=[{"text": result.chunk_text,"score":result.score} for result in results]
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"signal": ResponseSignal.SEARCH_COMPLETED_SUCCESSFULLY.value, "search_results": search_results}
+        content={"signal": ResponseSignal.SEARCH_COMPLETED_SUCCESSFULLY.value, "search_results": results}
     )

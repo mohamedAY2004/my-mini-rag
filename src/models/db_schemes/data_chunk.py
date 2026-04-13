@@ -19,3 +19,7 @@ class DataChunk(BaseModel):
                 "unique":False
             }
         ]
+class RetrievedChunk(BaseModel):
+    chunk_text: str
+    score: float
+    chunk_metadata: dict

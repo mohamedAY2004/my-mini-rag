@@ -1,3 +1,4 @@
+from stores.llm import LLMEnums
 from .BaseController import BaseController
 from models.db_schemes import Project, DataChunk
 from stores.llm.LLMEnums import DocumentTypeEnum
@@ -46,3 +47,21 @@ class NLPController(BaseController):
         #step 4: index items into collection
         await self.vectordb_client.insert_many(collection_name=collection_name, texts=texts, vectors=vectors, metadata=metadata, record_ids=record_ids)
         return True
+    
+    async def search_vectordb(self, project: Project, query: str,limit: int = 5,threshold: float=0.5):
+        #get collection name
+        collection_name= self.create_collection_name(project_id=project.project_id)
+        # get embedding
+        vector= self.embedding_client.embed_text(text= query, document_type=LLMEnums.DocumentTypeEnum.QUERY.value)
+        if len(vector)==0:
+            self.logger.error("Failed to embed query at search_vectordb NLPController")
+            return False
+        else:
+            vector=vector[0]
+        # do semantic search
+        results = await self.vectordb_client.search_by_vector(collection_name=collection_name, vector=vector, limit=limit,threshold=threshold)
+
+        if not results:
+            return None
+
+        return results

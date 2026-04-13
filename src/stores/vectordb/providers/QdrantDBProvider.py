@@ -4,6 +4,7 @@ from ..VectorDBEnums import DistanceMethodEnum
 from typing import List
 import logging
 import uuid
+from models.db_schemes import RetrievedChunk
 class QdrantDBProvider(VectorDBInterface):
     def __init__(self, db_path: str, distance_method: str):
         self.client = None
@@ -97,12 +98,15 @@ class QdrantDBProvider(VectorDBInterface):
         return True
 
 
-    async def search_by_vector(self, collection_name: str, vector: list, limit: int):
+    async def search_by_vector(self, collection_name: str, vector: list, limit: int,threshold: float = 0.5)->List[RetrievedChunk]:
         if not await self.is_collection_exists(collection_name):
             self.logger.error(f"Collection {collection_name} does not exist to search records") 
             return None
-        results = await self.client.query_points(collection_name=collection_name, query=vector, limit=limit, with_payload=True)
-        return results.points
+        results = await self.client.query_points(collection_name=collection_name, query=vector, limit=limit, with_payload=True,score_threshold=threshold)
+        if results:
+            return [RetrievedChunk(chunk_text=result.payload["text"], score=result.score, chunk_metadata=result.payload["metadata"]) for result in results.points]
+        else:
+            return None
 
     def _to_qdrant_id(self, record_id) -> str:
         hex_str = str(record_id).zfill(32)

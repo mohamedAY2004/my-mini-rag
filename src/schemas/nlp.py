@@ -6,3 +6,4 @@ class PushRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     limit: Optional[int] = 5
+    threshold: Optional[float] =0.5

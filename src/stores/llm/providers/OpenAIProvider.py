@@ -19,7 +19,7 @@ class OpenAIProvider(LLMInterface):
 
         self.embedding_model_id = None
         self.embedding_size = None
-        
+        self.enums = OpenAIEnums
         
         self.client = OpenAI(api_key=self.api_key,
          base_url = self.api_url if self.api_url and len(self.api_url) else None)
@@ -44,18 +44,24 @@ class OpenAIProvider(LLMInterface):
         generation_max_tokens = generation_max_tokens if generation_max_tokens is not None else self.default_generation_max_tokens
         temperature = temperature if temperature is not None else self.default_temperature
         chat_history = chat_history if chat_history else []
-        chat_history.append(self.construct_prompt(prompt, OpenAIEnums.USER.value))
+        chat_history.append(self.construct_prompt(prompt, self.enums.USER.value))
         response = self.client.chat.completions.create(
             model=self.generation_model_id,
             messages=chat_history,
             max_tokens=generation_max_tokens,
             temperature=temperature
         )
-        if not response or not response.choices or len(response.choices) == 0 or not response.choices[0].message.content:
+        content = None
+        if not response or not response.choices or len(response.choices) == 0:
             self.logger.error("Error generating text with OpenAI")
             return None
-        chat_history.append(self.construct_prompt(response.choices[0].message.content, OpenAIEnums.ASSISTANT.value))
-        return response.choices[0].message.content
+        if not response.choices[0].message.content and not response.choices[0].message.reasoning:
+            self.logger.error("Error generating text with OpenAI")
+            return None
+        else:
+            content = response.choices[0].message.content or response.choices[0].message.reasoning
+        chat_history.append(self.construct_prompt(content, self.enums.ASSISTANT.value))
+        return content
 
     def process_text(self, text:str):
         return text.strip()[:self.default_input_max_characters]    

@@ -6,11 +6,12 @@ from typing import List
 import logging
 import json
 class NLPController(BaseController):
-    def __init__(self, vectordb_client, generation_client, embedding_client):
+    def __init__(self, vectordb_client, generation_client, embedding_client,template_parser):
         super().__init__()
         self.vectordb_client = vectordb_client
         self.generation_client = generation_client
         self.embedding_client = embedding_client
+        self.template_parser = template_parser
         self.logger = logging.getLogger(__name__)
     def create_collection_name(self, project_id: str):
         return f"collection_{project_id}".strip().lower()
@@ -65,3 +66,33 @@ class NLPController(BaseController):
             return None
 
         return results
+    
+    async def answer_rag_question(self, project: Project, query: str,limit: int = 5,threshold: float=0.5):
+        #step 1: retrive
+        retrived_chunks=await self.search_vectordb(project=project,query=query,limit=limit,threshold=threshold)
+        if not retrived_chunks or len(retrived_chunks)==0:
+            return None
+
+        #step 2:construct LLM prompt
+        system_prompt=self.template_parser.get(group="rag",key="system_prompt")
+
+        # document_prompts=[]
+        # for i,chunk in enumerate(retrived_chunks):
+        #     document_prompts.append(self.template_parser.get(group="rag",key="document_prompt",variables={"doc_num": i+1, "chunk_text": chunk.chunk_text}))
+
+        document_prompts ="\n".join([
+            self.template_parser.get(group="rag",key="document_prompt",variables={"doc_num": i+1, "chunk_text": chunk.chunk_text})
+            for i,chunk in enumerate(retrived_chunks)
+        ])
+
+        footer_prompt=self.template_parser.get(group="rag",key="footer_prompt")
+
+        chat_history=[
+            self.generation_client.construct_prompt(prompt=system_prompt, role=self.generation_client.enums.SYSTEM.value)
+        ]
+
+        full_prompt="\n\n".join([document_prompts,footer_prompt,query])
+        answer= self.generation_client.generate_text(prompt=full_prompt, chat_history=chat_history)
+        
+        return answer
+

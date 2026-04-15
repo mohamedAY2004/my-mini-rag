@@ -11,8 +11,9 @@ class OpenAIEnums(Enum):
     ASSISTANT = "assistant"
 
 class GeminiEnums(Enum):
+    SYSTEM = "model"
+    ASSISTANT = "user"
     USER = "user"
-    MODEL = "model"
 
 class CoHereEnums(Enum):
     SYSTEM = "SYSTEM"

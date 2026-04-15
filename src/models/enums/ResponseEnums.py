@@ -17,3 +17,6 @@ class ResponseSignal(Enum):
     INSET_INTO_VECTORDB_FAILED = "inset_into_vectordb_failed"
     INDEX_INFO_FETCHED_SUCCESSFULLY = "index_info_fetched_successfully"
     SEARCH_COMPLETED_SUCCESSFULLY = "search_completed_successfully"
+
+    RAG_ANSWER_FAILED = "rag_answer_failed"
+    RAG_ANSWER_COMPLETED_SUCCESSFULLY = "rag_answer_completed_successfully"

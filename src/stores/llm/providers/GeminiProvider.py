@@ -19,7 +19,7 @@ class GeminiProvider(LLMInterface):
         self.generation_model_id = None
         self.embedding_model_id = None
         self.embedding_size = None
-
+        self.enums = GeminiEnums
         self.client = genai.Client(api_key=self.api_key)
 
         self.logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class GeminiProvider(LLMInterface):
             self.logger.error("Error generating text with Gemini")
             return None
 
-        chat_history.append(self.construct_prompt(response.text, GeminiEnums.MODEL.value))
+        chat_history.append(self.construct_prompt(response.text, GeminiEnums.SYSTEM.value))
         return response.text
 
     def embed_text(self, text: Union[str, List[str]], document_type: str = None):

@@ -13,3 +13,6 @@ google-genai==1.68.0
 cohere==5.20.7
 qdrant-client==1.17.0
 ollama==0.6.1
+SQLAlchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0

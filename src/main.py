@@ -1,17 +1,20 @@
 from fastapi import FastAPI
 from routes import base,data,nlp
-from motor.motor_asyncio import AsyncIOMotorClient
 from helpers.config import get_settings
 from stores.llm import LLMProviderFactory
 from stores.vectordb import VectorDBProviderFactory
 from stores.llm.templates.TemplateParser import TemplateParser
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 app = FastAPI()
 
 async def startup():
     app_settings = get_settings()
-    app.mongo_conn=AsyncIOMotorClient(app_settings.MONGODB_URL)
-    app.db_client=app.mongo_conn[app_settings.MONGODB_DATABASE]
 
+    #====================PostgreSQL Connection====================
+    postgres_url = f"postgresql+asyncpg://{app_settings.POSTGRES_USERNAME}:{app_settings.POSTGRES_PASSWORD}@{app_settings.POSTGRES_HOST}:{app_settings.POSTGRES_PORT}/{app_settings.POSTGRES_MAIN_DATABASE}"
+    app.db_engine=create_async_engine(postgres_url)
+    app.db_client=sessionmaker(app.db_engine, class_=AsyncSession, expire_on_commit=False)
     llm_provider_factory = LLMProviderFactory(app_settings)
 
     #generation client
@@ -30,7 +33,8 @@ async def startup():
 
 
 async def shutdown():
-    app.mongo_conn.close()
+    await app.db_engine.dispose()
+    await app.db_client.close()
     await app.vectordb_client.disconnect()
 
 app.add_event_handler("startup", startup)

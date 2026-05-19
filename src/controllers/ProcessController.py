@@ -7,10 +7,10 @@ from langchain_community.document_loaders import TextLoader
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 class ProcessController(BaseController):
-    def __init__(self, project_id: str):
+    def __init__(self, project_name: str):
         super().__init__()
-        self.project_id = project_id
-        self.project_dir = ProjectController().get_project_dir(project_id=project_id)
+        self.project_name = project_name
+        self.project_dir = ProjectController().get_project_dir(project_name=project_name)
 
     def get_file_extension(self, file_id: str):
         return os.path.splitext(file_id)[-1]

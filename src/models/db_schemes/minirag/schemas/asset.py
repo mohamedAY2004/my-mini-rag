@@ -22,7 +22,7 @@ class Asset(SQLAlchemyBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    asset_project_uuid = Column(UUID, ForeignKey("projects.project_uuid"),nullable=False)
+    asset_project_uuid = Column(UUID(as_uuid=True), ForeignKey("projects.project_uuid"),nullable=False)
 
 
     project = relationship("Project",back_populates="assets")

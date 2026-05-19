@@ -17,15 +17,15 @@ class DataChunk(SQLAlchemyBase):
     datachunk_order =Column(Integer)
     
     
-    chunk_project_uuid =Column(UUID(as_uuid=True),ForeignKey("projects.project_uuid"))
-    chunk_asset_uuid= Column(UUID(as_uuid=True),ForeignKey("assets.asset_uuid"))
+    datachunk_project_uuid =Column(UUID(as_uuid=True),ForeignKey("projects.project_uuid"))
+    datachunk_asset_uuid= Column(UUID(as_uuid=True),ForeignKey("assets.asset_uuid"))
 
     project= relationship("Project", back_populates="datachunks",uselist=False)
     asset = relationship("Asset",back_populates="datachunks",uselist=False)
 
     __table_args__ =(
-        Index("ix_datachunk_project_uuid",chunk_project_uuid),
-        Index("ix_datachunk_asset_uuid",chunk_asset_uuid)
+        Index("ix_datachunk_project_uuid",datachunk_project_uuid),
+        Index("ix_datachunk_asset_uuid",datachunk_asset_uuid)
     )
 
 class RetrievedChunk(BaseModel):

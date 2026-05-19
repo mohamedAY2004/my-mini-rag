@@ -34,7 +34,6 @@ async def startup():
 
 async def shutdown():
     await app.db_engine.dispose()
-    await app.db_client.close()
     await app.vectordb_client.disconnect()
 
 app.add_event_handler("startup", startup)

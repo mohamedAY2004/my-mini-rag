@@ -15,8 +15,8 @@ class DataController(BaseController):
             return False,ResponseSignal.FILE_SIZE_IS_EXCEEDED.value
         return True,ResponseSignal.FILE_VALIDATION_SUCCESS.value
 
-    def generate_unique_file_path(self, orig_file_name: str, project_id: str):
-       project_dir = ProjectController().get_project_dir(project_id=project_id)
+    def generate_unique_file_path(self, orig_file_name: str, project_name: str):
+       project_dir = ProjectController().get_project_dir(project_name=project_name)
        random_key = self.generate_random_string(18)
        clean_file_name = self.get_clean_file_name(orig_file_name=orig_file_name)
        new_file_path = os.path.join(project_dir, f"{random_key}_{clean_file_name}")

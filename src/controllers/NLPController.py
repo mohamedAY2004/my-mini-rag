@@ -32,8 +32,8 @@ class NLPController(BaseController):
         
         
         #step 2: manage items to index
-        texts = [c.chunk_text for c in chunks]
-        metadata = [c.chunk_metadata for c in chunks]
+        texts = [c.datachunk_text for c in chunks]
+        metadata = [c.datachunk_metadata for c in chunks]
         record_ids = [c.datachunk_uuid for c in chunks]
         vectors = [
             self.embedding_client.embed_text(text=text,document_type=DocumentTypeEnum.DOCUMENT.value)[0] 

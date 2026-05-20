@@ -50,7 +50,8 @@ class ChunkModel(BaseDataModel):
     async def get_chunks_by_project_uuid(self,project_uuid: UUID, page: int = 1, page_size: int = 100):
         async with self.db_client() as session:
             async with session.begin():
-                total_records= await session.execute(select(func.count(DataChunk.datachunk_uuid))).scalar_one()
+                res = await session.execute(select(func.count(DataChunk.datachunk_uuid)))
+                total_records= res.scalar_one()
                 #calculate the total number of pages
                 # total_pages=(total_records+page_size-1)//page_size
                 res = await session.execute(select(DataChunk).offset((page-1)*page_size).limit(page_size))

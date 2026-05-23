@@ -17,6 +17,7 @@ class ProjectModel(BaseDataModel):
         async with self.db_client() as session:
             async with session.begin():
                 session.add(project)
+                await session.flush()
             await session.refresh(project) # To get the current state of the project at the database like the project_uuid
         return project
 

@@ -22,7 +22,8 @@ class ChunkModel(BaseDataModel):
     async def create_chunk(self,chunk: DataChunk):
         async with self.db_client() as session:
             async with session.begin():
-                await session.add(chunk)
+                session.add(chunk)
+                await session.flush()
                 await session.refresh(chunk)
         return chunk
 

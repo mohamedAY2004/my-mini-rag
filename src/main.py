@@ -26,7 +26,7 @@ async def startup():
     app.embedding_client.set_embedding_model(app_settings.EMBEDDING_MODEL_ID, app_settings.EMBEDDING_SIZE)
 
     #vector db client
-    vector_db_provider_factory = VectorDBProviderFactory(app_settings)
+    vector_db_provider_factory = VectorDBProviderFactory(app_settings, db_client=app.db_client)
     app.vectordb_client = vector_db_provider_factory.create(provider=app_settings.VECTOR_DB_BACKEND)
     await app.vectordb_client.connect()
     app.template_parser = TemplateParser(language=app_settings.DEFAULT_LANGUAGE)

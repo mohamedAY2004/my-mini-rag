@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 class Settings (BaseSettings):
     APP_NAME: str
     APP_VERSION: str
@@ -15,6 +16,7 @@ class Settings (BaseSettings):
     POSTGRES_PORT: int
 
     #====================LLM Settings====================
+    GENERATION_BACKEND_LITERALS: List[str]=None
     GENERATION_BACKEND: str
     EMBEDDING_BACKEND: str
 
@@ -32,9 +34,11 @@ class Settings (BaseSettings):
     COHERE_API_KEY: str=None
 
     #====================VectorDB Settings====================
+    VECTOR_DB_BACKEND_LITERALS: List[str]=None
     VECTOR_DB_BACKEND: str=None
     VECTOR_DB_PATH: str=None
     VECTOR_DB_DISTANCE_METHOD: str=None
+    VECTOR_DB_PGVEC_INDEX_THRESHOLD: int
 
     #====================Template Settings====================
     DEFAULT_LANGUAGE: str="en"

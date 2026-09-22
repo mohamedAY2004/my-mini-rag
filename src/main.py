@@ -6,7 +6,12 @@ from stores.vectordb import VectorDBProviderFactory
 from stores.llm.templates.TemplateParser import TemplateParser
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from utils.metrics import setup_metrics
+
 app = FastAPI()
+
+# Setup Prometheus metrics
+setup_metrics(app=app)
 
 async def startup():
     app_settings = get_settings()
